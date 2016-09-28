@@ -43,7 +43,7 @@ end''')
 		ip_detected = shutit.send_and_get_output('''ip route get 8.8.8.8 | awk 'NR==1 {print $NF}' ''')
 #read -p "Please enter the FQDN of the server: " FQDN
 #read -p "Please enter the IP of the server (Auto Detect): $IP_DETECT" IP
-		fqdn = 'localhost.localdomain'
+		fqdn = 'localhost'
 		if shutit.cfg[self.module_id]['deployment_type'] not in ('rpm','container'):
 			shutit.fail('Wrong deployment type: ' + shutit.cfg[self.module_id]['deployment_type'])
 		shutit.send('''sed -i "/''' + ip_detected + '''/d" /etc/hosts''')
@@ -60,7 +60,11 @@ end''')
 		shutit.send('git clone -q https://github.com/IshentRas/cookbook-openshift3.git')
 		shutit.send('git clone -q https://github.com/chef-cookbooks/iptables.git')
 		shutit.send('git clone -q https://github.com/chef-cookbooks/yum.git')
-		shutit.send('git clone -q https://github.com/BackSlasher/chef-selinuxpolicy.git selinux_policy')
+		# Specific version seems to be required, else yum issues? see: issue #20
+		shutit.send('git clone https://github.com/BackSlasher/chef-selinuxpolicy.git selinux_policy')
+		shutit.send('cd selinux_policy')
+		shutit.send('git checkout v0.9.2')
+		shutit.send('cd ..')
 		# Seems to be required? see: issue #20
 		shutit.send('git clone -q https://github.com/chef-cookbooks/compat_resource')
 		shutit.send('cd ~/chef-solo-example')
@@ -127,25 +131,29 @@ fi''')
 		## Reset password for demo user
 		shutit.send('htpasswd -b /etc/origin/openshift-passwd demo 1234')
 		## Label the node as infra
-		shutit.send('oc label node $FQDN region=infra --config=/etc/origin/master/admin.kubeconfig &> /dev/null')
-		shutit.pause_point('''###### Installation DONE ######
-#####                   ######
-Your installation of Origin is completed.
-
-A demo user has been created for you.
-Password is : 1234
-
-Access the console here : https://console.${IP}.nip.io:8443/console
-
-You can also login via CLI : oc login -u demo
-
-Next steps for you (To be performed as system:admin --> oc login -u system:admin):
-
-1) Deploy registry -> oadm registry --service-account=registry --credentials=/etc/origin/master/openshift-registry.kubeconfig --config=/etc/origin/master/admin.kubeconfig
-2) Deploy router -> oadm router --service-account=router --credentials=/etc/origin/master/openshift-router.kubeconfig
-3) Read the documentation : https://docs.openshift.org/latest/welcome/index.html
-
-You should disconnect and reconnect so as to get the benefit of bash-completion on commands''')
+		shutit.send('oc label node ' + fqdn + ' region=infra --config=/etc/origin/master/admin.kubeconfig &> /dev/null')
+		# 'test'
+		shutit.send('oc get all')
+#		shutit.pause_point('''
+####### Installation DONE ######
+######                   ######
+#Your installation of Origin is completed.
+#
+#A demo user has been created for you.
+#Password is : 1234
+#
+#Access the console here : https://console.${IP}.nip.io:8443/console
+#
+#You can also login via CLI : oc login -u demo
+#
+#Next steps for you (To be performed as system:admin --> oc login -u system:admin):
+#
+#1) Deploy registry -> oadm registry --service-account=registry --credentials=/etc/origin/master/openshift-registry.kubeconfig --config=/etc/origin/master/admin.kubeconfig
+#2) Deploy router -> oadm router --service-account=router --credentials=/etc/origin/master/openshift-router.kubeconfig
+#3) Read the documentation : https://docs.openshift.org/latest/welcome/index.html
+#
+#You should disconnect and reconnect so as to get the benefit of bash-completion on commands''')
+		shutit.pause_point('OK, look around!')
 
 		shutit.logout()
 		shutit.logout()
