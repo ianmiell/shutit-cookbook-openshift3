@@ -153,7 +153,6 @@ fi''')
 #3) Read the documentation : https://docs.openshift.org/latest/welcome/index.html
 #
 #You should disconnect and reconnect so as to get the benefit of bash-completion on commands''')
-		shutit.pause_point('OK, look around!')
 
 		shutit.logout()
 		shutit.logout()
